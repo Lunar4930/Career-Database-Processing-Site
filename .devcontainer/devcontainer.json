@@ -1,0 +1,16 @@
+{
+  "image": "mcr.microsoft.com/vscode/devcontainers/python:3.12-bookworm",
+  "postCreateCommand": "pip3 install --user -r requirements.txt",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "-dbaeumer.vscode-eslint", 
+        "ms-python.python", 
+        "ms-toolsai.jupyter", 
+        "streetsidesoftware.code-spell-checker",
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
+      ]
+    }
+  }
+}
