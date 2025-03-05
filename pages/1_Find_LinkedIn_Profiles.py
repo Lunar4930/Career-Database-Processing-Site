@@ -78,7 +78,7 @@ if submit_csv:
             df.at[index, 'linkedin_id'] = profiles[0]
             df.at[index, 'other_matches'] = ', '.join(profiles[1:])
         
-        st.write(f'{first_name} {last_name} from {org}:', ','.join(profiles))
+        st.write(f'{first_name} {last_name} from {org}:', ', '.join(profiles))
         time.sleep(5)
     
     st.dataframe(df)
