@@ -131,7 +131,7 @@ st.title('Extract Names')
 
 with st.form(clear_on_submit=True, enter_to_submit=False, key='extract_names'):
     organization = st.text_input('Enter the name of the organization.')
-    uploaded_file = st.file_uploader('Upload a PDF, HTML, or image file containing names of people from the organization. Uploaded files will be sent to OpenAI and should comply with their terms of service.', type=['pdf', 'html', 'png', 'jpg', 'jpeg'])
+    uploaded_file = st.file_uploader('Upload a PDF, HTML, or image file containing names of people from the organization. Uploaded files will be sent to OpenAI.', type=['pdf', 'html', 'png', 'jpg', 'jpeg'])
     activate_process_file = st.form_submit_button('Process File')
 
 if activate_process_file:

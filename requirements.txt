@@ -8,3 +8,4 @@ openai==1.65.2
 beautifulsoup4==4.13.3
 pymupdf==1.25.3
 streamlit==1.42.2
+python-dotenv==1.0.1
