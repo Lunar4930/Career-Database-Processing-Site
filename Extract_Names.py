@@ -70,7 +70,7 @@ def process_file(input_file):
     # else:
     #     return "Unsupported file type"
 
-prompt = '''Analyze the provided file and extract the names of individuals mentioned, breaking the names down into last name, first name, middle name, and suffixes. Return this information in JSON format. If a field is not applicable or unknown, leave it blank.'''
+prompt = '''Analyze the provided file and extract the names of individuals mentioned, breaking the names down into last name, first name, middle name (or middle initial), and suffixes. Return this information in JSON format. If a field is not applicable or unknown, leave it blank.'''
 
 # Get API key from environment variable
 if os.path.exists('.env'):
@@ -123,6 +123,9 @@ def parse_openai_output(output, organization):
     df = pd.DataFrame(data['names'])
     df['organization'] = organization # Append organization name to each row
 
+    # Remove duplicate rows based on matching the first and last name
+    df = df.drop_duplicates(subset=['first_name', 'last_name'], keep='first')
+
     return df
 
 
@@ -145,6 +148,6 @@ if activate_process_file:
     result = send_to_openai(f[0], f[1])
     output = parse_openai_output(result, organization)
     st.dataframe(output)
-    st.download_button(label="Download CSV", data=output.to_csv(), file_name='1_names.csv', mime='text/csv')
+    st.download_button(label="Download CSV", data=output.to_csv(index=False), file_name='1_names.csv', mime='text/csv')
 
 
