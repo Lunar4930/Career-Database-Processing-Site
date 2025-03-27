@@ -70,7 +70,7 @@ def process_file(input_file):
     # else:
     #     return "Unsupported file type"
 
-prompt = '''Analyze the provided file and extract the names of individuals mentioned, breaking the names down into last name, first name, middle name (or middle initial), and suffixes. Return this information in JSON format. If a field is not applicable or unknown, leave it blank.'''
+prompt = '''Analyze the provided file and extract the names of individuals mentioned, breaking the names down into last name, first name, middle name (or middle initial), and suffixes (such as Jr.). Return this information in JSON format. If a field is not applicable or unknown, leave it blank.'''
 
 # Get API key from environment variable
 if os.path.exists('.env'):
