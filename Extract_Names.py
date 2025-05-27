@@ -153,6 +153,7 @@ def parse_openai_output(output, organization):
 
 # Streamlit application
 st.title('Extract Names')
+st.write('v2025.05.27')
 
 with st.form(clear_on_submit=True, enter_to_submit=False, key='extract_names'):
     organization = st.text_input('Enter the name of the organization.')
