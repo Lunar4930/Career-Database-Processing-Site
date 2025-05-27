@@ -70,7 +70,29 @@ def process_file(input_file):
     # else:
     #     return "Unsupported file type"
 
-prompt = '''Analyze the provided file and extract the names of individuals mentioned, breaking the names down into last name, first name, middle name (or middle initial), and suffixes (such as Jr.). Return this information in JSON format. If a field is not applicable or unknown, leave it blank.'''
+# prompt = '''Analyze the provided file and extract the names of individuals holding leadership positions or offices, breaking the names down into last name, first name, middle name (or middle initial, such as "J." or "M."), and suffixes (such as "Jr." and "Ph.D."). Return this information in JSON format. If a field is not applicable or unknown, leave it blank.'''
+prompt = '''
+SYSTEM ROLE: You are a text analysis expert tasked with extracting leadership information from a provided file.
+
+TASK INSTRUCTIONS:
+
+UNDERSTAND: Review the provided file and identify all mentions of individuals holding leadership positions or offices.
+
+BASICS: Determine the format for extracting names, which includes last name, first name, middle name (or middle initial), and suffixes (such as "Jr." and "Ph.D.").
+
+BREAK DOWN: Extract each name into its constituent parts:
+
+Last Name: The family name or surname.
+First Name: The given name.
+Middle Name/Middle Initial: Any additional names or initials between the first and last names (e.g., "John M. Doe" would have "M." as a middle initial).
+Suffixes: Any titles or designations following the full name (e.g., "Jr.", "Ph.D.", etc.).
+
+ANALYZE: If a field is not applicable or unknown, leave it blank. Ensure all extracted information is accurate and consistent in format.
+
+BUILD: Organize the extracted data into JSON format for easy reference.
+
+FINAL ANSWER:Provide the extracted leadership information in JSON format as specified above."
+'''
 
 # Get API key from environment variable
 if os.path.exists('.env'):
@@ -84,12 +106,12 @@ def send_to_openai(content, file_type, prompt=prompt, client=client):
         if file_type in ['jpg', 'jpeg', 'png']:
             # For images, use vision capability
             response = client.beta.chat.completions.parse(
-                model="gpt-4o",
+                model="gpt-4.1",
                 messages=[
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": "".format(prompt)},
+                            {"type": "text", "text": "".format(prompt.strip())},
                             {
                                 "type": "image_url",
                                 "image_url": {
@@ -104,7 +126,7 @@ def send_to_openai(content, file_type, prompt=prompt, client=client):
         else:
             # For text content (HTML, PDF)
             response = client.beta.chat.completions.parse(
-                model="gpt-4o",
+                model="gpt-4.1",
                 messages=[
                     {"role": "system", "content": "".format(prompt)},
                     {"role": "user", "content": content}
