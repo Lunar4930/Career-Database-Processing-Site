@@ -3,3 +3,4 @@ python-dotenv==1.2.1
 pandas==2.2.2
 beautifulsoup4==4.13.3
 pymupdf==1.25.3
+pydantic==2.12.5
