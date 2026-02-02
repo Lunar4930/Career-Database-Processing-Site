@@ -1,6 +1,5 @@
 streamlit==1.42.2
-python-dotenv==1.0.1
+python-dotenv==1.2.1
 pandas==2.2.2
-openai==1.65.2
 beautifulsoup4==4.13.3
 pymupdf==1.25.3
