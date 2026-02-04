@@ -25,6 +25,23 @@ Missing Data: If a field (like middle_name or suffix) is not present in the text
 
 model = "qwen/qwen3-vl-235b-a22b-instruct"
 
+# Provider preferences for the model
+qwen_provider = {
+        "allow_fallbacks": True,
+        "only": [
+            "Parasail",
+            "Fireworks",
+            "Alibaba",
+            "DeepInfra"
+        ],
+        "quantizations": [
+            "fp8",
+            "fp16",
+            "bf16",
+            "fp32"
+        ]
+    }
+
 # Get API key from environment variable
 if os.path.exists('.env'):
     dotenv.load_dotenv()
@@ -104,7 +121,7 @@ def process_file(input_file):
                     text += page.get_text()
             return (text, file_type)
 
-def send_to_openrouter(content, file_type, prompt=prompt, model=model):
+def send_to_openrouter(content, file_type, prompt=prompt, model=model, provider=qwen_provider):
     """
     Send content to OpenRouter API for name extraction.
 
@@ -113,7 +130,8 @@ def send_to_openrouter(content, file_type, prompt=prompt, model=model):
         file_type (str): The type of the file ('jpg', 'png', 'html', 'pdf').
         prompt (str): The prompt to guide the LLM.
         model (str): The model to use for processing.
-       
+        provider (dict): The provider configuration for the model.
+
     Returns:
         requests.Response: The response from the OpenRouter API.
     """
@@ -146,7 +164,8 @@ def send_to_openrouter(content, file_type, prompt=prompt, model=model):
                     }
                 ],
                 "response_format": schema_param,
-                "temperature": 0
+                "temperature": 0,
+                "provider": provider
             }
         else:
             # For text content (HTML, PDF)
@@ -222,14 +241,16 @@ def parse_response_output(response, organization):
     else:
         json_str = content_str  # Fallback if no markdown fences found
     
-    # Parse the JSON string into a Python object (list/dict)
-    data = json.loads(json_str)
-
+    data = json.loads(json_str)['names'] # Parse the JSON string into a Python object (list/dict)
+    
+    # st.write(json_str) # Debug: Show raw JSON output
+    
     df = pd.DataFrame(data)
     df['organization'] = organization # Append organization name to each row
-
-    # Remove duplicate rows based on matching the first and last name
-    df = df.drop_duplicates(subset=['first_name', 'last_name'], keep='first')
+    
+    # st.write(df) # Debug: Show DataFrame before deduplication
+    
+    df = df.drop_duplicates(subset=['first_name', 'last_name'], keep='first') # Remove duplicate rows based on matching the first and last name
 
     return df
 
@@ -252,6 +273,7 @@ if activate_process_file:
         st.stop()
     f = process_file(uploaded_file)
     result = send_to_openrouter(f[0], f[1])
+    st.write(result)
     output = parse_response_output(result, organization)
     st.dataframe(output)
     st.download_button(label="Download CSV", data=output.to_csv(index=False), file_name='1_names.csv', mime='text/csv')
