@@ -1,15 +1,12 @@
 # Career Database Processing Site
-*By (Brice Bowrey)[https://bowrey.info/]*
+*By [Brice Bowrey](https://bowrey.info/)*
 
-A small Streamlit app for extracting names from uploaded file sand finding matching LinkedIn profiles.
+A small Streamlit app for extracting names from uploaded files and finding matching LinkedIn profiles.
 
 ## What it does
-- Extracts person names from PDF/HTML/image files and exports them to CSV.
+- Uses language models to extract names from PDF/HTML/image files and exports them to CSV.
 - Searches for LinkedIn profile IDs using Brave and BrightData APIs.
-- Uses language models to extract structured data for subsequent processing.
-
-## Usability
-The Streamlit GUI is designed to make the workflow accessible and easy for collaborators and project stakeholders, with clear steps for uploading documents, reviewing results, and exporting files.
+- Outputs structured data for subsequent processing.
 
 ## Setup
 1. Create a `.env` file with:
@@ -22,3 +19,5 @@ The Streamlit GUI is designed to make the workflow accessible and easy for colla
 - `streamlit run Extract_Names.py`
 
 ## Demo
+https://github.com/user-attachments/assets/52b6d124-a4bb-45e7-9676-6b6630a1bb9d
+
