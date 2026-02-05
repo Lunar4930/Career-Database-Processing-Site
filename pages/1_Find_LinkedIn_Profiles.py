@@ -182,7 +182,7 @@ if submit_csv:
                 df.at[index, 'other_matches'] = ', '.join([profile for profile in profiles1 + profiles2 if profile != main_profile])
                 st.write(f'{first_name} {last_name} from {org}:', ', '.join(profiles2 + profiles1))
         
-        time.sleep(5)
+        time.sleep(1.5)
     
     st.dataframe(df)
     st.download_button('Download CSV', df.to_csv(index=False), file_name='2_linkedin_identifiers.csv', mime='text/csv')
