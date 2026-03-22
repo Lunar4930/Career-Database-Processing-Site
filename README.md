@@ -19,5 +19,9 @@ A small Streamlit app for extracting names from uploaded files and finding match
 - `streamlit run Extract_Names.py`
 
 ## Demo
-https://github.com/user-attachments/assets/52b6d124-a4bb-45e7-9676-6b6630a1bb9d
+*Note: The Safari Browser may have trouble playing this video*
+
+<video controls playsinline muted>
+  <source src="https://github.com/user-attachments/assets/52b6d124-a4bb-45e7-9676-6b6630a1bb9d" type="video/mp4">
+</video>
 
