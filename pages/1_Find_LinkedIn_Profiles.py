@@ -199,6 +199,6 @@ if submit_csv:
         df = df[columns]
 
     st.dataframe(df)
-    st.download_button('Download CSV', df.to_csv(index=False), file_name='2_linkedin_identifiers.csv', mime='text/csv')
+    st.download_button('Download CSV', df.to_csv(index=False), file_name=f'{df.organization[0]}_{time.strftime("%Y-%m-%d-%H-%M-%S")}.csv', mime='text/csv')
     
 

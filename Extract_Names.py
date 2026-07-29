@@ -277,6 +277,6 @@ if activate_process_file:
     st.write(result)
     output = parse_response_output(result, organization)
     st.dataframe(output)
-    st.download_button(label="Download CSV", data=output.to_csv(index=False), file_name='1_names.csv', mime='text/csv')
+    st.download_button(label="Download CSV", data=output.to_csv(index=False), file_name=f'1_names_{organization}.csv', mime='text/csv')
 
 
