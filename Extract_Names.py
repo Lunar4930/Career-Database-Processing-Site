@@ -1,14 +1,15 @@
-import streamlit as st
-import os
 import base64
-import pymupdf
 import json
-import dotenv
-import requests
+import os
 import re
+
+import dotenv
 import pandas as pd
-from pydantic import BaseModel, Field
+import pymupdf
+import requests
+import streamlit as st
 from bs4 import BeautifulSoup
+from pydantic import BaseModel, Field
 
 # Configure constants
 prompt = '''
