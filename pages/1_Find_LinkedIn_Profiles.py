@@ -1,13 +1,13 @@
-import streamlit as st
-import os
-import dotenv
-import pandas as pd
-import requests
-import re
 import json
+import os
+import re
 import time
 import uuid
 
+import dotenv
+import pandas as pd
+import requests
+import streamlit as st
 
 if os.path.exists('.env'):
     dotenv.load_dotenv()
@@ -20,14 +20,14 @@ def brave_search(first_name, last_name, middle_name, org, count=5, api_key=BRAVE
     headers = {'X-Subscription-Token': api_key}
 
     # Build query string
-    query = '{} {} {} {} "LinkedIn"'.format(first_name, middle_name, last_name, org)
+    query = f'{first_name} {middle_name} {last_name} {org} "LinkedIn"'
     
     params = {
         'q': query,
         'results_filter': 'web',
         'count': count
     }
-    response = requests.get(endpoint, params=params, headers=headers)
+    response = requests.get(endpoint, params=params, headers=headers) # type: ignore
     return response.json()
 
 def parse_brave_results(results):
@@ -73,12 +73,12 @@ def brightdata_search(first_name, last_name, middle_name, org, count=10, api_key
     search_string += '+LinkedIn'
 
     # Check the search url for non-ascii characters
-    url = requests.utils.requote_uri('https://www.google.com/search?q={}&gl=us&brd_json=1&num={}'.format(search_string, count))
+    url = requests.utils.requote_uri(f'https://www.google.com/search?q={search_string}&gl=us&brd_json=1&num={count}')
     
     endpoint = 'https://api.brightdata.com/request'
     headers = {
         "Content-Type": "application/json",
-        "Authorization": "Bearer {}".format(api_key)
+        "Authorization": f"Bearer {api_key}"
     }
 
     payload = {
@@ -149,7 +149,7 @@ if submit_csv:
             'organization': str,
             'linkedin_id': str,
             'other_matches': str,
-            'database_id': 'Int64'
+            'database_id': str
             })
     else:
         st.write('Please upload a CSV file.')
@@ -165,9 +165,6 @@ if submit_csv:
         profiles1 = parse_brave_results(results1)
         profiles2 = parse_brightdata_results(results2)
 
-        # Write database_id to the dataframe
-        df.at[index, 'database_id'] = str(uuid.uuid4())
-
         # Update the dataframe with the results
         if len(profiles1) > 0 or len(profiles2) > 0:
             profile_match = find_matching_profile(profiles1, profiles2)
@@ -181,9 +178,26 @@ if submit_csv:
                 df.at[index, 'linkedin_id'] = profiles2[0] if len(profiles2) > 0 else profiles1[0]
                 df.at[index, 'other_matches'] = ', '.join([profile for profile in profiles1 + profiles2 if profile != main_profile])
                 st.write(f'{first_name} {last_name} from {org}:', ', '.join(profiles2 + profiles1))
+
+        # Write database_id to the dataframe
+        linkedin_id = df.at[index, 'linkedin_id']
+        if pd.isna(linkedin_id):
+            df.at[index, 'database_id'] = str(uuid.uuid5(uuid.NAMESPACE_DNS, f'{first_name}_{middle_name}_{last_name}_{org}'))
+        else:
+            df.at[index, 'database_id'] = str(uuid.uuid5(uuid.NAMESPACE_DNS, f'{first_name}_{last_name}_{linkedin_id}'))
         
         time.sleep(1.5)
-    
+        
+    # Rearrange columns to have 'database_id' before 'linkedin_id' to preserve backward compatibility with older CSV files
+    if 'database_id' in df.columns and 'linkedin_id' in df.columns:
+        columns = list(df.columns)
+        columns.remove('database_id')
+
+        linkedin_index = columns.index('linkedin_id')
+        columns.insert(linkedin_index, 'database_id')
+
+        df = df[columns]
+
     st.dataframe(df)
     st.download_button('Download CSV', df.to_csv(index=False), file_name='2_linkedin_identifiers.csv', mime='text/csv')
     

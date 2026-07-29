@@ -98,7 +98,7 @@ def process_file(input_file):
             text = ""
             with pymupdf.open(input_file) as doc:
                 for page in doc:
-                    text += page.get_text()
+                    text += page.get_text() # type: ignore
             return (text, file_type)
     
     else: # If processing from file upload
@@ -119,7 +119,7 @@ def process_file(input_file):
             text = ""
             with pymupdf.open(stream=pdf_bytes, filetype="pdf") as doc:
                 for page in doc:
-                    text += page.get_text()
+                    text += page.get_text() # type: ignore
             return (text, file_type)
 
 def send_to_openrouter(content, file_type, prompt=prompt, model=model, provider=qwen_provider):
@@ -220,7 +220,7 @@ def send_to_openrouter(content, file_type, prompt=prompt, model=model, provider=
         return response
     
     except Exception as e:
-        return f"Error processing content: {str(e)}"
+        return f"Error processing content: {e!s}"
 
 def parse_response_output(response, organization):
     """
@@ -258,7 +258,7 @@ def parse_response_output(response, organization):
 
 # Streamlit application
 st.title('Extract Names')
-st.write('v2026.04.02')
+st.write('v2026.07.28')
 
 with st.form(clear_on_submit=True, enter_to_submit=False, key='extract_names'):
     organization = st.text_input('Enter the name of the organization.')
@@ -273,7 +273,7 @@ if activate_process_file:
         st.error('Please enter the name of the organization')
         st.stop()
     f = process_file(uploaded_file)
-    result = send_to_openrouter(f[0], f[1])
+    result = send_to_openrouter(f[0], f[1]) # type: ignore
     st.write(result)
     output = parse_response_output(result, organization)
     st.dataframe(output)
