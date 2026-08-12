@@ -219,8 +219,8 @@ def send_to_openrouter(content, file_type, prompt=prompt, model=model, provider=
     
         return response
     
-    except Exception as e:
-        return f"Error processing content: {e!s}"
+    except (requests.RequestException, ValueError) as e:
+        raise RuntimeError(f"Error processing content: {e!s}") from e
 
 def parse_response_output(response, organization):
     """
@@ -258,7 +258,7 @@ def parse_response_output(response, organization):
 
 # Streamlit application
 st.title('Extract Names')
-st.write('v2026.07.28')
+st.write('v2026.08.12')
 
 with st.form(clear_on_submit=True, enter_to_submit=False, key='extract_names'):
     organization = st.text_input('Enter the name of the organization.')
