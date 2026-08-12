@@ -9,14 +9,16 @@ A small Streamlit app for extracting names from uploaded files and finding match
 - Outputs structured data for subsequent processing.
 
 ## Setup
-1. Create a `.env` file with:
+1. Install [UV](https://docs.astral.sh/uv/getting-started/installation/) if you don't have it already.
+2. Create a `.env` file with:
    - `OPENROUTER_API_KEY`
    - `BRAVE_SEARCH_API_KEY`
    - `BRIGHTDATA_API_KEY`
-2. Build a development and deployment environment from the devcontainer.json file
+3. Install dependencies and create a virtual environment:
+   - `uv sync`
 
 ## Run
-- `streamlit run Extract_Names.py`
+- `uv run streamlit run Extract_Names.py`
 
 ## Demo
 *Note: The Safari Browser may have trouble playing this video*
