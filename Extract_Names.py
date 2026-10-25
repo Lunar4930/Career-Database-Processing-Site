@@ -24,24 +24,30 @@ Compound Surnames: Respect compound last names (e.g., "De La Hoya", "Van der Woo
 Missing Data: If a field (like middle_name or suffix) is not present in the text, you MUST return null. Do not use "N/A" or empty strings.
 '''
 
-model = "qwen/qwen3-vl-235b-a22b-instruct"
+# ----- Claude-Haiku-5.5 model configuration -----
+model = "anthropic/claude-haiku-5.5"
 
-# Provider preferences for the model
-qwen_provider = {
-        "allow_fallbacks": True,
-        "only": [
-            "Parasail",
-            "Fireworks",
-            "Alibaba",
-            "DeepInfra"
-        ],
-        "quantizations": [
-            "fp8",
-            "fp16",
-            "bf16",
-            "fp32"
-        ]
-    }
+provider_settings = None
+
+# ----- Qwen-3-vl-235b-a22b-instruct model configuration -----
+# model = "qwen/qwen3-vl-235b-a22b-instruct"
+
+# Provider preferences for the model 
+# provider_settings = {
+#         "allow_fallbacks": True,
+#         "only": [
+#             "Parasail",
+#             "Fireworks",
+#             "Alibaba",
+#             "DeepInfra"
+#         ],
+#         "quantizations": [
+#             "fp8",
+#             "fp16",
+#             "bf16",
+#             "fp32"
+#         ]
+#     }
 
 # Get API key from environment variable
 if os.path.exists('.env'):
@@ -122,7 +128,12 @@ def process_file(input_file):
                     text += page.get_text() # type: ignore
             return (text, file_type)
 
-def send_to_openrouter(content, file_type, prompt=prompt, model=model, provider=qwen_provider):
+def send_to_openrouter(content, 
+                       file_type, 
+                       prompt=prompt, 
+                       model=model, 
+                       provider=provider_settings
+                       ):
     """
     Send content to OpenRouter API for name extraction.
 
@@ -258,7 +269,7 @@ def parse_response_output(response, organization):
 
 # Streamlit application
 st.title('Extract Names')
-st.write('v2026.10.17') # VERSION NUMBER - bump with major changes
+st.write('v2026.10.25') # VERSION NUMBER - bump with major changes
 
 with st.form(clear_on_submit=True, enter_to_submit=False, key='extract_names'):
     organization = st.text_input('Enter the name of the organization.')
