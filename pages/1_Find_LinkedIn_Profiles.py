@@ -9,13 +9,15 @@ import pandas as pd
 import requests
 import streamlit as st
 
-from urllib.parse import urlencode, quote
+from tavily import TavilyClient
 
 if os.path.exists('.env'):
     dotenv.load_dotenv()
 
 BRAVE_SEARCH_API_KEY = os.environ.get('BRAVE_SEARCH_API_KEY')
 BRIGHTDATA_API_KEY = os.environ.get('BRIGHTDATA_API_KEY')
+TAVILY_API_KEY = os.environ.get('TAVILY_API_KEY')
+TAVILY_CLIENT = TavilyClient(TAVILY_API_KEY)
 
 def brave_search(first_name, last_name, middle_name, org, count=5, api_key=BRAVE_SEARCH_API_KEY):
     endpoint = 'https://api.search.brave.com/res/v1/web/search'
@@ -44,9 +46,9 @@ def parse_brave_results(results):
     
     return matches
 
-def brightdata_search(first_name, last_name, middle_name, org, count=10, api_key=BRIGHTDATA_API_KEY):
+def tavily_search(first_name, last_name, middle_name, org, count=10, tavily_client=TAVILY_CLIENT):
     """
-    Search for individuals using the BrightData API
+    Search for individuals using the Tavily API
 
     Parameters:
         first_name (str): The first name of the individual
@@ -54,150 +56,30 @@ def brightdata_search(first_name, last_name, middle_name, org, count=10, api_key
         middle_name (str): The middle name of the individual
         org (str): The organization the individual is associated with
         count (int): The number of search results to return
-        api_key (str): The API key for the BrightData API
-
-    Returns:
-        dict: A dictionary containing the search results
     """
-    # ===Build query string====
-    # Filter out NaN values from name parts
+    # Build query string
     name_parts = [part for part in [first_name, middle_name, last_name] if not pd.isna(part)]
-
-    # # If any name parts have a space in them (e.g. the LLM failed to correctly parse the middle initial), split them and take only the first section
-    # name_parts = [part.split()[0] if ' ' in part else part for part in name_parts]
-
-    # # Create the search string by joining name parts and organization
-    # search_string = '+'.join(name_parts)
-    # if not pd.isna(org):
-    #     search_string += '+' + '+'.join(org.split())
-    
-    # # Add LinkedIn to the search string
-    # search_string += '+LinkedIn'
-
-    #===Build request URL====
     search_string = ' '.join(name_parts)
     if not pd.isna(org):
         search_string += ' ' + org
     search_string += ' LinkedIn'
-    # search_string must be plain text, not already URL-encoded.
-    params = {
-        "q": search_string,  # Keep q first.
-        "gl": "us",
-        "hl": "en",
-        "brd_json": "1",
-    }
 
-    url = "https://www.google.com/search?" + urlencode(
-        params, quote_via=quote
+    response = TAVILY_CLIENT.search(
+        query=search_string,
+        search_depth="advanced",
+        max_results=count,
+        include_domains=["linkedin.com"],
+        include_favicon=False,
+        include_usage=False,
     )
+    return response
 
-    payload = {
-        "zone": "career_database_project",
-        "url": url,
-        "format": "raw",
-    }
-
-    response = requests.post(
-        "https://api.brightdata.com/request",
-        headers={"Authorization": f"Bearer {api_key}"},
-        json=payload,  # Sets Content-Type: application/json.
-        timeout=90,
-    )
-
-    error_code = response.headers.get("x-brd-error-code")
-    fetch_status = response.headers.get(
-        "x-brd-status-code", str(response.status_code)
-    )
-
-    with open("logs/logs.txt", "a") as f:
-        f.write(f'\n{time.strftime("%Y-%m-%d %H:%M:%S")}\n')
-        f.write(f'BrightData API response status code: {response.status_code}\n')
-        f.write(f'BrightData API `x-brd-error-code`: {response.headers.get("x-brd-error-code")}\n')
-        f.write(f'BrightData API `x-brd-error`: {response.headers.get("x-brd-error")}\n')
-        f.write(f'BrightData API `x-brd-status-code`: {response.headers.get("x-brd-status-code")}\n')
-        f.write(f'BrightData API response text: {response.text}\n')
-
-    # if error_code or int(fetch_status) >= 400:
-    #     raise RuntimeError(
-    #         f"Bright Data {fetch_status} [{error_code}]: "
-    #         f"{response.headers.get('x-brd-error', response.text[:300])}"
-    #     )
-
-    # Retry at random interval on fail
-    if response.headers.get('x-brd-status-code') == 502: # 502 Suggests errors on BrightData's end
-        retry_count += 1
-        if retry_count > 2:
-            st.error('Too many server errors. Please try again later.')
-            return None
-        random_wait = random.randint(35, 95)
-        st.warning(f'BrightData API returned a server error. Retrying in {random_wait} seconds...')
-        time.sleep(random_wait)
-        response = requests.post(endpoint, headers=headers, json=payload)
-        with open("logs/logs.txt", "a") as f:
-            f.write(f'\n{time.strftime("%Y-%m-%d %H:%M:%S")} - Retry\n')
-            f.write(f'BrightData API response status code: {response.status_code}\n')
-            f.write(f'BrightData API `x-brd-error-code`: {response.headers.get("x-brd-error-code")}\n')
-            f.write(f'BrightData API `x-brd-error`: {response.headers.get("x-brd-error")}\n')
-            f.write(f'BrightData API `x-brd-status-code`: {response.headers.get("x-brd-status-code")}\n')
-            f.write(f'BrightData API response text: {response.text}\n')
-
-    # response.raise_for_status()
-    # data = response.json()
-    
-    # # Check the search url for non-ascii characters
-    # url = requests.utils.requote_uri(f'https://www.google.com/search?q={search_string}&gl=us&brd_json=1&num={count}')
-    
-    # endpoint = 'https://api.brightdata.com/request'
-    # headers = {
-    #     "Content-Type": "application/json",
-    #     "Authorization": f"Bearer {api_key}"
-    # }
-
-    # payload = {
-    #     "zone": "career_database_project",
-    #     "url": url,
-    #     "format": "raw"
-    # }
-
-    # response = requests.post(endpoint, headers=headers, json=payload)
-
-    # retry_count = 0
-
-    # # Log the response status code and text for debugging
-    # with open("logs/logs.txt", "a") as f:
-    #     f.write(f'\\n{time.strftime("%Y-%m-%d %H:%M:%S")}\n')
-    #     f.write(f'BrightData API response status code: {response.status_code}\n')
-    #     f.write(f'BrightData API `x-brd-error-code`: {response.headers.get("x-brd-error-code")}\n')
-    #     f.write(f'BrightData API `x-brd-error`: {response.headers.get("x-brd-error")}\n')
-    #     f.write(f'BrightData API `x-brd-status-code`: {response.headers.get("x-brd-status-code")}\n')
-    #     f.write(f'BrightData API response text: {response.text}\n')
-
-    # # Retry at random interval on server error
-    # if response.headers.get('x-brd-status-code') == 502:
-    #     retry_count += 1
-    #     if retry_count > 2:
-    #         st.error('Too many server errors. Please try again later.')
-    #         return None
-    #     random_wait = random.randint(35, 95)
-    #     st.warning(f'BrightData API returned a server error. Retrying in {random_wait} seconds...')
-    #     time.sleep(random_wait)
-    #     response = requests.post(endpoint, headers=headers, json=payload)
-    #     with open("logs/logs.txt", "a") as f:
-    #         f.write(f'\\n{time.strftime("%Y-%m-%d %H:%M:%S")} - Retry\n')
-    #         f.write(f'BrightData API response status code: {response.status_code}\n')
-    #         f.write(f'BrightData API `x-brd-error-code`: {response.headers.get("x-brd-error-code")}\n')
-    #         f.write(f'BrightData API `x-brd-error`: {response.headers.get("x-brd-error")}\n')
-    #         f.write(f'BrightData API `x-brd-status-code`: {response.headers.get("x-brd-status-code")}\n')
-    #         f.write(f'BrightData API response text: {response.text}\n')
-
-    return response.text
-
-def parse_brightdata_results(input_text):
+def parse_tavily_results(results):
     """
-    Parse the search results from the BrightData API
+    Parse the search results from the Tavily API
 
     Parameters:
-        input_text (str): The text containing the search results
+        results (dict): The search results from the Tavily API
 
     Returns:
         list: A list of urls that match the LinkedIn pattern
@@ -205,13 +87,10 @@ def parse_brightdata_results(input_text):
 
     pattern = r'https://www\.linkedin\.com/in/([^/]+)' 
     matches = []
-    
-    # Extract the JSON data from the input text
-    data = json.loads(input_text)
 
     # Extract the relevant information from the search results
-    for result in data['organic']:
-        match = re.fullmatch(pattern, result['link'])
+    for result in results['results']:
+        match = re.fullmatch(pattern, result['url'])
         if match:
             matches.append(match.group(1))
 
@@ -263,9 +142,9 @@ if submit_csv:
         middle_name = row['middle_name']
         org = row['organization']
         results1 = brave_search(first_name, last_name, middle_name, org)
-        results2 = brightdata_search(first_name, last_name, middle_name, org)
+        results2 = tavily_search(first_name, last_name, middle_name, org)
         profiles1 = parse_brave_results(results1)
-        profiles2 = parse_brightdata_results(results2)
+        profiles2 = parse_tavily_results(results2)
 
         # Update the dataframe with the results
         if len(profiles1) > 0 or len(profiles2) > 0:
