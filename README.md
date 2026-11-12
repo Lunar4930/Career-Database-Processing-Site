@@ -13,7 +13,7 @@ A small Streamlit app for extracting names from uploaded files and finding match
 2. Create a `.env` file with:
    - `OPENROUTER_API_KEY`
    - `BRAVE_SEARCH_API_KEY`
-   - `BRIGHTDATA_API_KEY`
+   - `TAVILY_API_KEY`
 3. Install dependencies and create a virtual environment:
    - `uv sync`
 

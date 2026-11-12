@@ -15,7 +15,7 @@ if os.path.exists('.env'):
     dotenv.load_dotenv()
 
 BRAVE_SEARCH_API_KEY = os.environ.get('BRAVE_SEARCH_API_KEY')
-BRIGHTDATA_API_KEY = os.environ.get('BRIGHTDATA_API_KEY')
+# BRIGHTDATA_API_KEY = os.environ.get('BRIGHTDATA_API_KEY')
 TAVILY_API_KEY = os.environ.get('TAVILY_API_KEY')
 TAVILY_CLIENT = TavilyClient(TAVILY_API_KEY)
 
@@ -31,19 +31,27 @@ def brave_search(first_name, last_name, middle_name, org, count=5, api_key=BRAVE
         'results_filter': 'web',
         'count': count
     }
-    response = requests.get(endpoint, params=params, headers=headers) # type: ignore
+
+    try:
+        response = requests.get(endpoint, params=params, headers=headers) # type: ignore
+        response.raise_for_status()
+    except Exception as exc:
+        st.error(f"Brave search aborted — {type(exc).__name__}: {exc}")
+        if isinstance(exc, requests.HTTPError):
+            st.code(exc.response.text)
+        st.stop()
     return response.json()
 
 def parse_brave_results(results):
     matches = []
-    # For Brave results
-    pattern = r'https://www\.linkedin\.com/in/([^/]+)/' 
 
-    for item in results['web']['results']:
-        match = re.fullmatch(pattern, item['url'])
+    pattern = (r'https?://(?:[a-z0-9-]+\.)?linkedin\.com/in/([^/?#\s]+)/?(?:\?[^#\s]*)?(?:#[^\s]*)?')
+
+    for result in results['web']['results']:
+        match = re.fullmatch(pattern, result['url'], flags=re.IGNORECASE)
         if match:
             matches.append(match.group(1))
-    
+
     return matches
 
 def tavily_search(first_name, last_name, middle_name, org, count=10, tavily_client=TAVILY_CLIENT):
@@ -64,14 +72,19 @@ def tavily_search(first_name, last_name, middle_name, org, count=10, tavily_clie
         search_string += ' ' + org
     search_string += ' LinkedIn'
 
-    response = TAVILY_CLIENT.search(
-        query=search_string,
-        search_depth="advanced",
-        max_results=count,
-        include_domains=["linkedin.com"],
-        include_favicon=False,
-        include_usage=False,
-    )
+    try:
+        response = tavily_client.search(
+            query=search_string,
+            search_depth="advanced",
+            max_results=count,
+            include_domains=["linkedin.com"],
+            include_favicon=False,
+            include_usage=False,
+        )
+    except Exception as exc:
+        st.error(f"Tavily search aborted — {type(exc).__name__}: {exc}")
+        st.stop()
+        
     return response
 
 def parse_tavily_results(results):
@@ -85,12 +98,12 @@ def parse_tavily_results(results):
         list: A list of urls that match the LinkedIn pattern
     """
 
-    pattern = r'https://www\.linkedin\.com/in/([^/]+)' 
+    pattern = (r'https?://(?:[a-z0-9-]+\.)?linkedin\.com/in/([^/?#\s]+)/?(?:\?[^#\s]*)?(?:#[^\s]*)?')
     matches = []
 
     # Extract the relevant information from the search results
     for result in results['results']:
-        match = re.fullmatch(pattern, result['url'])
+        match = re.fullmatch(pattern, result['url'], flags=re.IGNORECASE)
         if match:
             matches.append(match.group(1))
 
