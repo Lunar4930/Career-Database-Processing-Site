@@ -8,7 +8,6 @@ import dotenv
 import pandas as pd
 import requests
 import streamlit as st
-
 from tavily import TavilyClient
 
 if os.path.exists('.env'):
@@ -180,7 +179,7 @@ if submit_csv:
         else:
             df.at[index, 'database_id'] = str(uuid.uuid5(uuid.NAMESPACE_DNS, f'{first_name}_{last_name}_{linkedin_id}'))
         
-        time.sleep(3)
+        time.sleep(1.5)
         
     # Rearrange columns to have 'database_id' before 'linkedin_id' to preserve backward compatibility with older CSV files
     if 'database_id' in df.columns and 'linkedin_id' in df.columns:
