@@ -8,12 +8,15 @@ import dotenv
 import pandas as pd
 import requests
 import streamlit as st
+from tavily import TavilyClient
 
 if os.path.exists('.env'):
     dotenv.load_dotenv()
 
 BRAVE_SEARCH_API_KEY = os.environ.get('BRAVE_SEARCH_API_KEY')
-BRIGHTDATA_API_KEY = os.environ.get('BRIGHTDATA_API_KEY')
+# BRIGHTDATA_API_KEY = os.environ.get('BRIGHTDATA_API_KEY')
+TAVILY_API_KEY = os.environ.get('TAVILY_API_KEY')
+TAVILY_CLIENT = TavilyClient(TAVILY_API_KEY)
 
 def brave_search(first_name, last_name, middle_name, org, count=5, api_key=BRAVE_SEARCH_API_KEY):
     endpoint = 'https://api.search.brave.com/res/v1/web/search'
@@ -27,24 +30,32 @@ def brave_search(first_name, last_name, middle_name, org, count=5, api_key=BRAVE
         'results_filter': 'web',
         'count': count
     }
-    response = requests.get(endpoint, params=params, headers=headers) # type: ignore
+
+    try:
+        response = requests.get(endpoint, params=params, headers=headers) # type: ignore
+        response.raise_for_status()
+    except Exception as exc:
+        st.error(f"Brave search aborted — {type(exc).__name__}: {exc}")
+        if isinstance(exc, requests.HTTPError):
+            st.code(exc.response.text)
+        st.stop()
     return response.json()
 
 def parse_brave_results(results):
     matches = []
-    # For Brave results
-    pattern = r'https://www\.linkedin\.com/in/([^/]+)/' 
 
-    for item in results['web']['results']:
-        match = re.fullmatch(pattern, item['url'])
+    pattern = (r'https?://(?:[a-z0-9-]+\.)?linkedin\.com/in/([^/?#\s]+)/?(?:\?[^#\s]*)?(?:#[^\s]*)?')
+
+    for result in results['web']['results']:
+        match = re.fullmatch(pattern, result['url'], flags=re.IGNORECASE)
         if match:
             matches.append(match.group(1))
-    
+
     return matches
 
-def brightdata_search(first_name, last_name, middle_name, org, count=10, api_key=BRIGHTDATA_API_KEY):
+def tavily_search(first_name, last_name, middle_name, org, count=10, tavily_client=TAVILY_CLIENT):
     """
-    Search for individuals using the BrightData API
+    Search for individuals using the Tavily API
 
     Parameters:
         first_name (str): The first name of the individual
@@ -52,64 +63,46 @@ def brightdata_search(first_name, last_name, middle_name, org, count=10, api_key
         middle_name (str): The middle name of the individual
         org (str): The organization the individual is associated with
         count (int): The number of search results to return
-        api_key (str): The API key for the BrightData API
-
-    Returns:
-        dict: A dictionary containing the search results
     """
     # Build query string
-    # Filter out NaN values from name parts
     name_parts = [part for part in [first_name, middle_name, last_name] if not pd.isna(part)]
-
-    # If any name parts have a space in them (e.g. the LLM failed to correctly parse the middle initial), split them and take only the first section
-    name_parts = [part.split()[0] if ' ' in part else part for part in name_parts]
-
-    # Create the search string by joining name parts and organization
-    search_string = '+'.join(name_parts)
+    search_string = ' '.join(name_parts)
     if not pd.isna(org):
-        search_string += '+' + '+'.join(org.split())
-    
-    # Add LinkedIn to the search string
-    search_string += '+LinkedIn'
+        search_string += ' ' + org
+    search_string += ' LinkedIn'
 
-    # Check the search url for non-ascii characters
-    url = requests.utils.requote_uri(f'https://www.google.com/search?q={search_string}&gl=us&brd_json=1&num={count}')
-    
-    endpoint = 'https://api.brightdata.com/request'
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
-    }
+    try:
+        response = tavily_client.search(
+            query=search_string,
+            search_depth="advanced",
+            max_results=count,
+            include_domains=["linkedin.com"],
+            include_favicon=False,
+            include_usage=False,
+        )
+    except Exception as exc:
+        st.error(f"Tavily search aborted — {type(exc).__name__}: {exc}")
+        st.stop()
+        
+    return response
 
-    payload = {
-        "zone": "career_database_project",
-        "url": url,
-        "format": "raw"
-    }
-
-    response = requests.post(endpoint, headers=headers, json=payload)
-    return response.text
-
-def parse_brightdata_results(input_text):
+def parse_tavily_results(results):
     """
-    Parse the search results from the BrightData API
+    Parse the search results from the Tavily API
 
     Parameters:
-        input_text (str): The text containing the search results
+        results (dict): The search results from the Tavily API
 
     Returns:
         list: A list of urls that match the LinkedIn pattern
     """
 
-    pattern = r'https://www\.linkedin\.com/in/([^/]+)' 
+    pattern = (r'https?://(?:[a-z0-9-]+\.)?linkedin\.com/in/([^/?#\s]+)/?(?:\?[^#\s]*)?(?:#[^\s]*)?')
     matches = []
-    
-    # Extract the JSON data from the input text
-    data = json.loads(input_text)
 
     # Extract the relevant information from the search results
-    for result in data['organic']:
-        match = re.fullmatch(pattern, result['link'])
+    for result in results['results']:
+        match = re.fullmatch(pattern, result['url'], flags=re.IGNORECASE)
         if match:
             matches.append(match.group(1))
 
@@ -161,9 +154,9 @@ if submit_csv:
         middle_name = row['middle_name']
         org = row['organization']
         results1 = brave_search(first_name, last_name, middle_name, org)
-        results2 = brightdata_search(first_name, last_name, middle_name, org)
+        results2 = tavily_search(first_name, last_name, middle_name, org)
         profiles1 = parse_brave_results(results1)
-        profiles2 = parse_brightdata_results(results2)
+        profiles2 = parse_tavily_results(results2)
 
         # Update the dataframe with the results
         if len(profiles1) > 0 or len(profiles2) > 0:
