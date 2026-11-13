@@ -147,6 +147,11 @@ if submit_csv:
     else:
         st.write('Please upload a CSV file.')
         st.stop()
+
+    # Build profile match columns, which should exist even when neither search provider finds a profile.
+    for column in ('linkedin_id', 'other_matches'):
+        if column not in df.columns:
+            df[column] = pd.NA
     
     for index, row in df.iterrows():
         first_name = row['first_name']

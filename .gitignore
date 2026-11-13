@@ -1,3 +1,6 @@
 .env
 .samples/
 testing.ipynb
+.venv/
+.pytest_cache/
+__pycache__/

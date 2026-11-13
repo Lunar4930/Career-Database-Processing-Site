@@ -13,3 +13,16 @@ dependencies = [
     "streamlit>=1.54.0,<2",
     "tavily-python>=0.8.5",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3,<10",
+    "pytest-socket>=0.7,<1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Streamlit's test runner uses local Unix sockets for its asyncio event loop.
+# TCP/IP sockets and DNS remain blocked, including calls from API clients.
+addopts = "--strict-markers --disable-socket --allow-unix-socket"
+required_plugins = ["pytest-socket"]

@@ -257,7 +257,8 @@ def parse_response_output(response, organization):
     
     # st.write(json_str) # Debug: Show raw JSON output
     
-    df = pd.DataFrame(data)
+    # Keep the CSV schema intact even when the model returns no names.
+    df = pd.DataFrame(data, columns=list(NameIndividual.model_fields))
     df['organization'] = organization # Append organization name to each row
     
     # st.write(df) # Debug: Show DataFrame before deduplication

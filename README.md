@@ -1,7 +1,6 @@
 # Career Database Processing Site
-*By [Brice Bowrey](https://bowrey.info/)*
 
-A small Streamlit app for extracting names from uploaded files and finding matching LinkedIn profiles.
+A Streamlit app for extracting names from uploaded files and finding matching LinkedIn profiles.
 
 ## What it does
 - Uses language models to extract names from PDF/HTML/image files and exports them to CSV.
