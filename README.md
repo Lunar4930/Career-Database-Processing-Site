@@ -24,3 +24,15 @@ A Streamlit app for extracting names from uploaded files and finding matching Li
 
 https://github.com/user-attachments/assets/52b6d124-a4bb-45e7-9676-6b6630a1bb9d
 
+## Development
+
+For regression tests: from the repository root, install the development dependencies and run the full suite:
+
+```sh
+uv sync --locked --group dev
+uv run --locked pytest -q
+```
+
+`uv run` runs pytest in the project's virtual environment. `--locked` requires `uv.lock` to match the project configuration and fails if it needs updating. `-q` shows compact progress, failure details, and a final summary.
+
+See [tests/README.md](tests/README.md) for more details.
